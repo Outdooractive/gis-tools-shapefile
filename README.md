@@ -76,3 +76,17 @@ The shapefile path is constructed from the base URL by replacing the extension:
 - Field name length: maximum 10 characters per dBase specification
 - Multipatch geometry is read-only (converted to `GeometryCollection`)
 - AutoCAD Civil 3D and ArcGIS variants are not supported
+
+## Contributing
+
+Please [create an issue](https://github.com/Outdooractive/gis-tools-shapefile/issues) or [open a pull request](https://github.com/Outdooractive/gis-tools-shapefile/pulls) with a fix or enhancement.
+
+## License
+
+MIT
+
+## Authors
+
+Thomas Rasch, Outdooractive
+
+Built on top of [**gis-tools**](https://github.com/Outdooractive/gis-tools).
