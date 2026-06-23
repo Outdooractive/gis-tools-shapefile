@@ -16,7 +16,7 @@ let package = Package(
             targets: ["GISToolsShapefile"]),
     ],
     dependencies: [
-        .package(path: "../gis-tools"),
+        .package(url: "https://github.com/Outdooractive/gis-tools.git", branch: "main"),
     ],
     targets: [
         .target(
