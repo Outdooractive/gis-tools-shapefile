@@ -25,8 +25,8 @@ Swift 6.1 or higher. Compiles on iOS (≥ iOS 15), macOS (≥ macOS 15), tvOS (�
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Outdooractive/gis-tools-shapefile", from: "1.0.0"),
-    .package(url: "https://github.com/Outdooractive/gis-tools", from: "1.13.6"),
+    .package(url: "https://github.com/Outdooractive/gis-tools-shapefile", from: "1.0.1"),
+    .package(url: "https://github.com/Outdooractive/gis-tools", from: "2.0.0"),
 ],
 targets: [
     .target(name: "MyTarget", dependencies: [
