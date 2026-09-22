@@ -1529,18 +1529,25 @@ extension ShapefileCoder {
 
 extension ShapefileCoder {
 
+    /// The WKT string for the receiver's projection, or `nil` if no WKT
+    /// representation is available (coordinates without an SRID, or a
+    /// projection without a known WKT serialization).
     private static func writePrj(_ projection: Projection) -> String? {
-        switch projection {
-        case .epsg4326:
+        guard projection.hasSRID else {
+            return nil
+        }
+
+        switch projection.srid {
+        case 4326:
             return #"GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]]"#
 
-        case .epsg3857:
+        case 3857:
             return #"PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1]]"#
 
-        case .epsg4978:
+        case 4978:
             return #"GEOCCS["WGS 84 (geocentric)",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["metre",1]]"#
 
-        case .noSRID:
+        default:
             return nil
         }
     }
