@@ -1,12 +1,13 @@
 import Foundation
-import Testing
 @testable import GISTools
 @testable import GISToolsShapefile
+import Testing
 
 struct ShapefileCoderTests {
 
     private func tempShapefileURL() -> URL {
-        let dir = FileManager.default.temporaryDirectory
+        let dir = FileManager.default
+            .temporaryDirectory
             .appendingPathComponent("shp_test_\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("test")
@@ -32,7 +33,7 @@ struct ShapefileCoderTests {
 
     /// Validates round-trip of a Point with a single Boolean property.
     @Test
-    func booleanPropertyRoundTrip() async throws {
+    func booleanPropertyRoundTrip() throws {
         var trueFeature = Feature(Point(Coordinate3D(latitude: 0.0, longitude: 0.0)))
         trueFeature.properties = ["flag": true]
 
@@ -47,7 +48,7 @@ struct ShapefileCoderTests {
 
     /// Validates round-trip of an empty FeatureCollection.
     @Test
-    func emptyCollection() async throws {
+    func emptyCollection() throws {
         let original = FeatureCollection()
         let url = tempShapefileURL()
         defer { cleanup(url) }
@@ -59,7 +60,7 @@ struct ShapefileCoderTests {
 
     /// Validates that an invalid .shp file returns nil.
     @Test
-    func invalidFile() async throws {
+    func invalidFile() throws {
         let url = tempShapefileURL()
         defer { cleanup(url) }
 
@@ -75,7 +76,7 @@ struct ShapefileCoderTests {
 
     /// Validates round-trip of a Point with String, Int, Double, and Bool properties.
     @Test
-    func multiplePropertyTypes() async throws {
+    func multiplePropertyTypes() throws {
         var feature = Feature(Point(Coordinate3D(latitude: 0.0, longitude: 0.0)))
         feature.properties = [
             "str": "hello",
@@ -92,10 +93,11 @@ struct ShapefileCoderTests {
         #expect(props["yes"] as? Bool == true)
     }
 
-    /// Validates .prj file writing for EPSG:3857.
+    /// Validates EPSG:3857 round-trip fidelity and the `.prj` file.
     @Test
-    func projection3857() async throws {
-        let feature = Feature(Point(Coordinate3D(x: 1_000_000.0, y: 2_000_000.0)))
+    func projection3857() throws {
+        let coordinate = Coordinate3D.epsg3857(x: 1_000_000.0, y: 2_000_000.0)
+        let feature = Feature(Point(coordinate))
         let original = FeatureCollection([feature])
 
         let url = tempShapefileURL()
@@ -105,28 +107,36 @@ struct ShapefileCoderTests {
 
         let prjURL = url.appendingPathExtension("prj")
         #expect(FileManager.default.fileExists(atPath: prjURL.path))
+        let prj = try String(contentsOf: prjURL, encoding: .utf8)
+        #expect(prj.contains("Pseudo-Mercator"))
+
+        let loaded = try #require(FeatureCollection(shapefile: url))
+        #expect(loaded.projection == .epsg3857)
+        let loadedPoint = try #require(loaded.features.first?.geometry as? Point)
+        #expect(loadedPoint.coordinate.longitude == 1_000_000.0)
+        #expect(loadedPoint.coordinate.latitude == 2_000_000.0)
     }
 
     /// Validates round-trip of a Point coordinate (no Z/M).
     @Test
-    func pointCoordinateRoundTrip() async throws {
+    func pointCoordinateRoundTrip() throws {
         let coord = Coordinate3D(latitude: 48.1, longitude: 16.3)
         let feature = Feature(Point(coord))
 
         let loaded = try roundTrip([feature])
-        let loadedPoint = loaded.features[0].geometry as! Point
+        let loadedPoint = try #require(loaded.features.first?.geometry as? Point)
         #expect(abs(loadedPoint.coordinate.latitude - 48.1) < 0.000001)
         #expect(abs(loadedPoint.coordinate.longitude - 16.3) < 0.000001)
     }
 
     /// Validates round-trip of a Point with altitude (PointZ).
     @Test
-    func pointZRoundTrip() async throws {
+    func pointZRoundTrip() throws {
         let coord = Coordinate3D(latitude: 48.1, longitude: 16.3, altitude: 200.0)
         let feature = Feature(Point(coord))
 
         let loaded = try roundTrip([feature])
-        let loadedPoint = loaded.features[0].geometry as! Point
+        let loadedPoint = try #require(loaded.features.first?.geometry as? Point)
         #expect(abs(loadedPoint.coordinate.latitude - 48.1) < 0.000001)
         #expect(abs(loadedPoint.coordinate.longitude - 16.3) < 0.000001)
         #expect(abs((loadedPoint.coordinate.altitude ?? 0) - 200.0) < 0.01)
@@ -134,9 +144,9 @@ struct ShapefileCoderTests {
 
     /// Validates multiple Point features round-trip correctly.
     @Test
-    func multipleFeatures() async throws {
+    func multipleFeatures() throws {
         var features: [Feature] = []
-        for i in 0..<10 {
+        for i in 0 ..< 10 {
             var f = Feature(Point(Coordinate3D(latitude: Double(i), longitude: Double(i * 2))))
             f.properties = ["index": i]
             features.append(f)
@@ -148,7 +158,7 @@ struct ShapefileCoderTests {
 
     /// Validates reading the Natural Earth populated places shapefile.
     @Test
-    func naturalEarthPopulatedPlaces() async throws {
+    func naturalEarthPopulatedPlaces() throws {
         let url = TestData.shapefileUrl(package: "Shapefiles", name: "ne_10m_populated_places_simple")
         let fc = try ShapefileCoder.read(from: url)
         #expect(fc.features.count == 7342)
@@ -156,13 +166,13 @@ struct ShapefileCoderTests {
 
         let first = fc.features[0]
         let firstPoint = try #require(first.geometry as? Point)
-        #expect(abs(firstPoint.coordinate.latitude - (-34.5)) < 1.0)
-        #expect(abs(firstPoint.coordinate.longitude - (-57.8)) < 1.0)
+        #expect(abs(firstPoint.coordinate.latitude - -34.5) < 1.0)
+        #expect(abs(firstPoint.coordinate.longitude - -57.8) < 1.0)
         #expect(first.properties["scalerank"] != nil)
         #expect(first.properties["name"] != nil)
         #expect(first.properties["featurecla"] != nil)
 
-        let last = fc.features.last!
+        let last = try #require(fc.features.last)
         let lastPoint = try #require(last.geometry as? Point)
         #expect(abs(lastPoint.coordinate.latitude - 22.3) < 1.0)
         #expect(abs(lastPoint.coordinate.longitude - 114.2) < 1.0)
@@ -184,12 +194,14 @@ struct ShapefileCoderTests {
     /// Reads the Natural Earth shapefile and prints the first 10 features as a table.
     /// Disabled by default — enable explicitly to inspect data.
     @Test(.disabled("Enable manually to inspect shapefile data"))
-    func dumpNaturalEarth() async throws {
+    func dumpNaturalEarth() throws {
         let url = TestData.shapefileUrl(package: "Shapefiles", name: "ne_10m_populated_places_simple")
         let fc = try ShapefileCoder.read(from: url)
 
         func pad(_ s: String, _ len: Int) -> String {
-            if s.count >= len { return String(s.prefix(len)) }
+            if s.count >= len {
+                return String(s.prefix(len))
+            }
             return s + String(repeating: " ", count: len - s.count)
         }
 
@@ -197,12 +209,13 @@ struct ShapefileCoderTests {
         print("  \(pad("Name", 30)) \(pad("Feature Class", 22)) \(pad("Lat", 10)) \(pad("Lon", 10)) \(pad("Pop Max", 12)) \(pad("Country", 20))")
         print(String(repeating: "-", count: 120))
 
-        for i in 0..<min(10, fc.features.count) {
+        for i in 0 ..< min(10, fc.features.count) {
             let f = fc.features[i]
             let props = f.properties
             let name = pad((props["name"] as? String) ?? "", 30)
             let featurecla = pad((props["featurecla"] as? String) ?? "", 22)
-            let coord = f.geometry.allCoordinates.first!
+            guard let coord = f.geometry?.allCoordinates.first else { continue }
+
             let lat = pad(String(format: "%.4f", coord.latitude), 10)
             let lon = pad(String(format: "%.4f", coord.longitude), 10)
             let popStr: String
@@ -224,7 +237,7 @@ struct ShapefileCoderTests {
     /// Reads the Natural Earth shapefile and writes it back to `<project-root>/ne_output.shp`.
     /// Disabled by default — enable to regenerate the test output for comparison.
     @Test(.disabled("Enable to regenerate output shapefile"))
-    func regenerateNaturalEarth() async throws {
+    func regenerateNaturalEarth() throws {
         let input = TestData.shapefileUrl(package: "Shapefiles", name: "ne_10m_populated_places_simple")
         let fc = try ShapefileCoder.read(from: input)
 
@@ -236,4 +249,3 @@ struct ShapefileCoderTests {
     }
 
 }
-

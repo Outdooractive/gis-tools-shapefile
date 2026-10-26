@@ -1,24 +1,45 @@
-# This workflow will build a Swift project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
-
 name: Swift
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-
+  macos:
+    name: test (macOS)
     runs-on: macos-latest
+    timeout-minutes: 20
 
     steps:
-    - uses: swift-actions/setup-swift@v3
-    - uses: actions/checkout@v4
-    - name: Clean Package
-      run: swift package clean
-    - name: Build Test
-      run: swift test
+      - uses: actions/checkout@v4
+      - uses: swift-actions/setup-swift@v3
+      - name: Build
+        run: swift build
+      - name: Test with coverage
+        run: swift test --enable-code-coverage
 
+  linux:
+    name: test, coverage and docs (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: swift:latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure Python
+        run: command -v python3 >/dev/null || (apt-get update && apt-get install -y python3)
+      - name: Build
+        run: swift build
+      - name: Test and enforce coverage
+        run: python3 scripts/coverage_report.py --minimum 90
+      - name: Build documentation
+        run: python3 scripts/check_documentation.py
