@@ -68,6 +68,10 @@ representation.
 
 ## Next Steps
 
-- <doc:ReadingShapefiles>
-- <doc:WritingShapefiles>
-- <doc:Limits>
+- [Reading Shapefiles][readingshapefiles]
+- [Writing Shapefiles][writingshapefiles]
+- [Limits and Limitations][limits]
+
+[readingshapefiles]: https://swiftpackageindex.com/Outdooractive/gis-tools-shapefile/documentation/gistoolsshapefile/readingshapefiles
+[writingshapefiles]: https://swiftpackageindex.com/Outdooractive/gis-tools-shapefile/documentation/gistoolsshapefile/writingshapefiles
+[limits]: https://swiftpackageindex.com/Outdooractive/gis-tools-shapefile/documentation/gistoolsshapefile/limits
