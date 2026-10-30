@@ -11,10 +11,10 @@ dependencies:
 dependencies: [
     .package(
         url: "https://github.com/Outdooractive/gis-tools",
-        from: "3.0.0-beta.5"),
+        from: "3.0.0"),
     .package(
         url: "https://github.com/Outdooractive/gis-tools-shapefile",
-        from: "3.0.0-beta.1"),
+        from: "3.0.0"),
 ],
 targets: [
     .target(

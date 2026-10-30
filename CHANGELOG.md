@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 3.0.0 - 2026-10-30
+
 ### Fixed
 
 - **Projections are preserved.** Reading now tags coordinates with the CRS
